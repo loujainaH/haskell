@@ -1,0 +1,97 @@
+import DataFile
+                                            --FIRST FUNCTION											 
+removeLast []=[]
+removeLast x= tail (reverse x)
+
+now []= " "
+now z = reverse( last z : ' ' : removeLast z) 
+								
+--dakhelaha string we bet return list
+helperWordToken2 [] = []
+helperWordToken2 x 	|  elem (last x) punct = words (now x)
+					|  otherwise = [x]					
+
+helperWordToken1 [] = []
+--helperWordToken1 [x]= helperWordToken2 x
+helperWordToken1 (x:y) =((helperWordToken2 x) : (helperWordToken1 y))
+							
+wordToken []=[]
+wordToken x = concat( helperWordToken1 (words x) )									
+											
+											--SECOND FUNCTION
+											
+wordTokenList [] = []
+--wordTokenList [x] = concat (helperWordToken1 (words x) ) 											
+wordTokenList x = concat( map wordToken x)
+											--THIRD FUNCTION
+helperUniqueBigrams []=[]
+helperUniqueBigrams [x]=[]
+helperUniqueBigrams (x:y:z) = ([(x,y)]) : (helperUniqueBigrams (y:z))
+
+removeDuplicates []=[]
+removeDuplicates (x:y)| elem x y = removeDuplicates y
+					  | otherwise = x:removeDuplicates y
+
+uniqueBigrams []=[]
+uniqueBigrams x= concat (removeDuplicates (helperUniqueBigrams x))					  
+					  
+					  
+											--FOURTH FUNCTION
+helperUniqueTrigrams []=[]
+helperUniqueTrigrams [x]=[]
+helperUniqueTrigrams (x:y:[])= []
+helperUniqueTrigrams (x:y:z:w) = ([(x,y,z)]) : (helperUniqueTrigrams (y:z:w))
+
+uniqueTrigrams []=[]
+uniqueTrigrams x = concat (removeDuplicates (helperUniqueTrigrams x))					  
+											--FIFTH FUNCTION
+
+countn a [] = 0
+countn a (x:xs)= if a==x then 1 + (countn a xs)
+				 else countn a xs
+				 
+helperBigramsFreq [] z =[]
+--helperBigramsFreq [x] z =[(x , (countn x z))]
+helperBigramsFreq (x:y) z = ([(x , (countn x z))]): (helperBigramsFreq y z) 
+
+bigramsFreq []=[]
+bigramsFreq x =  concat (helperBigramsFreq (uniqueBigrams x) (concat((helperUniqueBigrams x))))  
+											
+											--SIXTH FUNCTION
+trigramsFreq [] =[]					  
+trigramsFreq x=concat (helperBigramsFreq (uniqueTrigrams x) (concat((helperUniqueTrigrams x))))  
+											--SEVENTH FUNCTION											
+getFreq a [] = 0											
+getFreq a ((h,t):xs) = if a==h then t 
+							   else getFreq a xs 											
+											--EIGTH FUNCTION
+-- 0??????? wala infinity ????? wala error ?????											
+generateOneProb ((w1,w2,w3),a) [] = 0							
+generateOneProb ((w1,w2,w3),a) (((x,y),b): z )| w1==x && w2==y =  a/b 
+											  | otherwise = generateOneProb ((w1,w2,w3),a) z
+											
+											--NINETH FUNCTION
+genProbPairs [] x=[]											
+genProbPairs x []=[]
+genProbPairs ((x,n):xs) y = ( x , generateOneProb (x,n) y ) : (genProbPairs xs y)
+
+											--TENTH FUNCTION
+			--n>0.03 or n>=0.03
+helperGenerateNextWord (w1,w2) [] = []										
+helperGenerateNextWord (w1,w2) (((x,y,z),n) : w)  | w1==x && w2==y && n > 0.03  = (z : (helperGenerateNextWord (w1,w2) w))
+											| otherwise = helperGenerateNextWord (w1,w2) w
+											
+generateNextWord x [] =error "Sorry, it is not possible to infer from current database"	
+generateNextWord x y |length (helperGenerateNextWord (x!!0 , x!!1) y) > 0 =(helperGenerateNextWord (x!!0 , x!!1) y)!!(randomZeroToX((length (helperGenerateNextWord (x!!0 , x!!1) y))-1))										
+					 |otherwise =error "Sorry, it is not possible to infer from current database"	
+					
+											--ELEVENTH FUNCTION
+											
+helperGenerateText x 0 z = z
+helperGenerateText x n z=helperGenerateText ((words x)!!1 ++" "++generateNextWord (words x)( genProbPairs (trigramsFreq (wordTokenList docs)) (bigramsFreq (wordTokenList docs)))) (n-1) (z ++ helperPunct( generateNextWord (words x) ( genProbPairs (trigramsFreq (wordTokenList docs)) (bigramsFreq (wordTokenList docs)))))
+			
+helperPunct x  | elem (last x) punct = x
+			    |otherwise = " " ++ x
+			
+generateText x n | length(wordToken( helperGenerateText x n "" )) < (2+n) = (words x)!!0 ++ helperPunct((words x)!!1)  ++ helperGenerateText x n ""
+			     | otherwise = ""
